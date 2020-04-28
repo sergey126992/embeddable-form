@@ -46,37 +46,34 @@ Route::post('/data', function (Request $request, JsonRpcServer $server) {
 ```
 
 ```php
-class JsonRpcClient
+class JsonRpcServer
 {
     const JSON_RPC_VERSION = '2.0';
 
-    const METHOD_URI = 'data';
-
-    protected $client;
+    protected $controller;
 
     public function __construct()
     {
-        $this->client = new Client([
-            'headers' => ['Content-Type' => 'application/json'],
-            'base_uri' => config('services.data.base_uri')
-        ]);
+        $this->controller = resolve(DataController::class);
     }
 
-    public function send(string $method, array $params): array
+    public function handle(Request $request)
     {
-        $response = $this->client
-            ->post(self::METHOD_URI, [
-                RequestOptions::JSON => [
-                    'jsonrpc' => self::JSON_RPC_VERSION,
-                    'id' => time(),
-                    'method' => $method,
-                    'params' => $params
-                ]
-            ])->getBody()->getContents();
+        try {
+            $content = json_decode($request->getContent(), true);
 
-        return json_decode($response, true);
+            if (empty($content)) {
+                throw new JsonRpcException('Parse error', JsonRpcException::PARSE_ERROR);
+            }
+
+            $result = $this->controller->{$content['method']}(...[$content['params']]);
+
+            return JsonRpcResponse::success($result, $content['id']);
+
+        } catch (\Exception $e) {
+            return JsonRpcResponse::error($e->getMessage());
+        }
     }
-
 }
 ```
 
