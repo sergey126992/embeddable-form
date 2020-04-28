@@ -1,4 +1,4 @@
-# JSON-RPC 2.0 Client and Server with Laravel 7.0
+## JSON-RPC 2.0 Client and Server with Laravel 7.0
 
 ##Client
 
